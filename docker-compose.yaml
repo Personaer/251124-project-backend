@@ -1,0 +1,98 @@
+services:
+  # ===================
+  # Data Layer
+  # ===================
+  # postgres:
+  #   image: postgres:15-alpine
+  #   container_name: postgres
+  #   environment:
+  #     POSTGRES_DB: aidb
+  #     POSTGRES_USER: aiion
+  #     POSTGRES_PASSWORD: aiion4man
+  #   ports:
+  #     - "5432:5432"
+  #   volumes:
+  #     - postgres_data:/var/lib/postgresql/data
+  #   networks:
+  #     - spring-network
+  #   healthcheck:
+  #     test: [ "CMD", "pg_isready", "-U", "aiion", "-d", "aidb" ]
+  #     interval: 10s
+  #     timeout: 5s
+  #     retries: 5
+  #     start_period: 10s
+
+  # ===================
+  # Edge Layer (API Gateway)
+  # ===================
+  gateway:
+    build:
+      context: .
+      dockerfile: ./gateway/Dockerfile
+    container_name: gateway
+    ports:
+      - "8080:8080"
+    env_file:
+      - .env
+    networks:
+      - spring-network
+
+    healthcheck:
+      test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8080/actuator/health || exit 1" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
+
+  # ===================
+  # Service Layer
+  # ===================
+  user-service:
+    build:
+      context: .
+      dockerfile: ./services/userservice/Dockerfile
+    container_name: userservice
+    ports:
+      - "8082:8082"
+    networks:
+      - spring-network
+
+  auth-service:
+    build:
+      context: .
+      dockerfile: ./services/authservice/Dockerfile
+    container_name: authservice
+    ports:
+      - "8081:8081"
+    networks:
+      - spring-network
+  # ===================
+  # Client Layer
+  # ===================
+  # nextjs:
+  #   build:
+  #     context: ./frontend
+  #     dockerfile: Dockerfile
+  #   container_name: frontend
+  #   ports:
+  #     - "3000:3000"
+  #   environment:
+  #     - NODE_ENV=production
+  #     - NEXT_PUBLIC_API_GATEWAY_URL=http://gateway:8080
+  #     - NEXT_PUBLIC_API_BASE_URL=http://gateway:8080
+  #     - NEXT_PUBLIC_WS_URL=ws://gateway:8080/ws
+  #   restart: unless-stopped
+  #   networks:
+  #     - spring-network
+  #   depends_on:
+  #     gateway:
+  #       condition: service_healthy
+
+  # volumes:
+  #   postgres_data:
+  #     # prometheus_data:
+  #     # grafana_data:
+
+networks:
+  spring-network:
+    driver: bridge

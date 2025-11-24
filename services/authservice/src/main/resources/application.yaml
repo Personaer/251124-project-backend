@@ -1,0 +1,11 @@
+spring:
+  application:
+    name: auth-service
+  cloud:
+    config:
+      enabled: false
+      import-check:
+        enabled: false
+
+server:
+  port: 8081
