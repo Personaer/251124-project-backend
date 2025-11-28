@@ -199,9 +199,37 @@ public class NaverController {
     }
 
     // 로그아웃
-    // GET /auth/naver/logout
-    @GetMapping("/logout")
-    public ResponseEntity<ApiResponse> logout() {
-        return ResponseEntity.ok(ApiResponse.success("로그아웃 성공"));
+    // POST /auth/naver/logout
+    // Authorization 헤더에 JWT 토큰을 포함하여 요청
+    @PostMapping("/logout")
+    public ResponseEntity<ApiResponse> logout(
+            @RequestHeader(value = "Authorization", required = false) String authorization) {
+        try {
+            // Authorization 헤더 확인
+            if (authorization == null || !authorization.startsWith("Bearer ")) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(ApiResponse.error("JWT 토큰이 필요합니다."));
+            }
+
+            // JWT 토큰 추출
+            String jwtToken = authorization.substring(7);
+
+            // JWT 토큰 검증
+            if (!jwtService.validateToken(jwtToken)) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(ApiResponse.error("유효하지 않은 토큰입니다."));
+            }
+
+            // JWT 토큰 검증 완료 (파싱은 validateToken에서 이미 수행됨)
+
+            // 로그아웃 성공 응답
+            return ResponseEntity.ok(ApiResponse.success("로그아웃 성공"));
+
+        } catch (Exception e) {
+            System.err.println("ERROR: 로그아웃 처리 중 예외 발생: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error("로그아웃 처리 중 오류가 발생했습니다."));
+        }
     }
 }
