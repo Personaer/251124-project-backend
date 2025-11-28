@@ -1,26 +1,22 @@
-package store.kanggyoenggu.authservice.controller.oauth;
+package store.kanggyoenggu.authservice.kakao;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import store.kanggyoenggu.authservice.dto.*;
-import store.kanggyoenggu.authservice.dto.oauth.KakaoTokenResponse;
-import store.kanggyoenggu.authservice.dto.oauth.KakaoUserInfo;
-import store.kanggyoenggu.authservice.service.oauth.KakaoOAuthService;
-import store.kanggyoenggu.authservice.service.JwtService;
+
+import store.kanggyoenggu.authservice.jwt.JwtService;
+import store.kanggyoenggu.authservice.response.*;
 
 import java.net.URI;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 
-/**
- * 카카오 OAuth2 인증 컨트롤러 (Spring MVC)
- */
+// 카카오 OAuth2 인증 컨트롤러 (Spring MVC)
 @RestController
 @RequestMapping("/auth/kakao")
-public class KakaoAuthController {
+public class KakaoController {
 
     private final KakaoOAuthService kakaoOAuthService;
     private final JwtService jwtService;
@@ -37,20 +33,16 @@ public class KakaoAuthController {
     @Value("${frontend.callback-url}")
     private String frontendCallbackUrl;
 
-    public KakaoAuthController(KakaoOAuthService kakaoOAuthService, JwtService jwtService) {
+    public KakaoController(KakaoOAuthService kakaoOAuthService, JwtService jwtService) {
         this.kakaoOAuthService = kakaoOAuthService;
         this.jwtService = jwtService;
     }
 
-    /**
-     * 카카오 로그인 URL 생성
-     * POST /auth/kakao/login
-     * 
-     * RESTful API 방식: JSON 응답으로 카카오 로그인 URL 반환
-     * 프론트엔드에서 받아서 처리
-     * 
-     * 로그인은 상태를 변경하는 작업이므로 POST 메서드 사용
-     */
+    // 카카오 로그인 URL 생성
+    // POST /auth/kakao/login
+    // RESTful API 방식: JSON 응답으로 카카오 로그인 URL 반환
+    // 프론트엔드에서 받아서 처리
+    // 로그인은 상태를 변경하는 작업이므로 POST 메서드 사용
     @PostMapping("/login")
     public ResponseEntity<LoginResponse> kakaoLogin() {
         String kakaoAuthUrl = String.format(
@@ -62,10 +54,8 @@ public class KakaoAuthController {
         return ResponseEntity.ok(LoginResponse.success(kakaoAuthUrl));
     }
 
-    /**
-     * 카카오 OAuth2 콜백 처리 (동기 방식)
-     * GET /auth/kakao/callback?code=xxx (카카오 표준)
-     */
+    // 카카오 OAuth2 콜백 처리 (동기 방식)
+    // GET /auth/kakao/callback?code=xxx (카카오 표준)
     @GetMapping("/callback")
     public ResponseEntity<Void> kakaoCallback(@RequestParam(required = false) String code) {
         // GET 방식 (카카오 표준)
@@ -83,9 +73,7 @@ public class KakaoAuthController {
         return new ResponseEntity<>(headers, HttpStatus.FOUND);
     }
 
-    /**
-     * 공통 콜백 처리 메서드
-     */
+    // 공통 콜백 처리 메서드
     private ResponseEntity<Void> processCallback(String code) {
         try {
             // 1. 액세스 토큰 요청 (동기 처리)
@@ -94,8 +82,6 @@ public class KakaoAuthController {
 
             // 카카오 액세스 토큰 출력
             System.out.println("Access Token: " + accessToken);
-            System.out.println("Token Type: " + tokenResponse.getTokenType());
-            System.out.println("Expires In: " + tokenResponse.getExpiresIn());
 
             // 2. 사용자 정보 조회 (동기 처리)
             KakaoUserInfo userInfo = kakaoOAuthService.getUserInfo(accessToken);
@@ -112,12 +98,6 @@ public class KakaoAuthController {
             String thumbnailImageUrl = profile != null
                     ? (profile.getThumbnailImageUrl() != null ? profile.getThumbnailImageUrl() : "없음")
                     : "없음";
-
-            // 카카오 사용자 정보 출력 (가입 정보)
-            System.out.println("카카오 ID: " + kakaoId);
-            System.out.println("닉네임: " + nickname);
-            System.out.println("프로필 이미지: " + profileImageUrl);
-            System.out.println("썸네일 이미지: " + thumbnailImageUrl);
 
             // 4. JWT 토큰 생성
             String jwtToken = jwtService.generateToken(kakaoId, nickname);
@@ -138,9 +118,7 @@ public class KakaoAuthController {
         }
     }
 
-    /**
-     * 안전한 리다이렉트 응답 생성
-     */
+    // 안전한 리다이렉트 응답 생성
     private ResponseEntity<Void> createRedirectResponse(String baseUrl, String token, String error) {
         try {
             // baseUrl 유효성 검사
@@ -155,16 +133,12 @@ public class KakaoAuthController {
                 // 성공: 토큰 포함
                 String encodedToken = URLEncoder.encode(token, StandardCharsets.UTF_8);
                 redirectUrl = String.format("%s?token=%s", baseUrl, encodedToken);
-                System.out.println(
-                        "리다이렉트 URL (성공): " + redirectUrl.substring(0, Math.min(100, redirectUrl.length())) + "...");
             } else if (error != null) {
                 // 실패: 에러 포함
                 redirectUrl = String.format("%s?error=%s", baseUrl, URLEncoder.encode(error, StandardCharsets.UTF_8));
-                System.out.println("리다이렉트 URL (실패): " + redirectUrl);
             } else {
                 // 기본 리다이렉트
                 redirectUrl = baseUrl;
-                System.out.println("리다이렉트 URL (기본): " + redirectUrl);
             }
 
             // URI 생성 및 검증
@@ -199,13 +173,10 @@ public class KakaoAuthController {
         }
     }
 
-    /**
-     * 사용자 정보 조회
-     * GET /auth/kakao/user
-     * 
-     * Gateway에서 이미 JWT 검증을 완료하고 헤더에 사용자 정보를 추가했으므로,
-     * 중복 검증 없이 헤더에서 직접 사용자 정보를 추출합니다.
-     */
+    // 사용자 정보 조회
+    // GET /auth/kakao/user
+    // Gateway에서 이미 JWT 검증을 완료하고 헤더에 사용자 정보를 추가했으므로,
+    // 중복 검증 없이 헤더에서 직접 사용자 정보를 추출합니다.
     @GetMapping("/user")
     public ResponseEntity<UserInfoResponse> getUserInfo(
             @RequestHeader("X-User-Id") String userId,
@@ -221,10 +192,8 @@ public class KakaoAuthController {
         return ResponseEntity.ok(UserInfoResponse.success(userData));
     }
 
-    /**
-     * 로그아웃
-     * GET /auth/kakao/logout
-     */
+    // 로그아웃
+    // GET /auth/kakao/logout
     @GetMapping("/logout")
     public ResponseEntity<ApiResponse> logout() {
         return ResponseEntity.ok(ApiResponse.success("로그아웃 성공"));

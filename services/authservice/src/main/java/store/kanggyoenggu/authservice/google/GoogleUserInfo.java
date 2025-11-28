@@ -1,8 +1,6 @@
-package store.kanggyoenggu.authservice.dto.oauth;
+package store.kanggyoenggu.authservice.google;
 
-/**
- * 구글 사용자 정보 DTO
- */
+// 구글 사용자 정보 DTO
 public class GoogleUserInfo {
 
     private String id;
@@ -34,4 +32,3 @@ public class GoogleUserInfo {
         this.picture = picture;
     }
 }
-

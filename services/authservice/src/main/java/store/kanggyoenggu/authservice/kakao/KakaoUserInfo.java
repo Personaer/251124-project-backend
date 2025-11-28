@@ -1,10 +1,8 @@
-package store.kanggyoenggu.authservice.dto.oauth;
+package store.kanggyoenggu.authservice.kakao;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-/**
- * 카카오 사용자 정보 DTO
- */
+// 카카오 사용자 정보 DTO
 public class KakaoUserInfo {
 
     private Long id;
@@ -40,9 +38,7 @@ public class KakaoUserInfo {
         this.kakaoAccount = kakaoAccount;
     }
 
-    /**
-     * 카카오 계정 정보
-     */
+    // 카카오 계정 정보
     public static class KakaoAccount {
         private Profile profile;
 
@@ -78,9 +74,7 @@ public class KakaoUserInfo {
         }
     }
 
-    /**
-     * 프로필 정보
-     */
+    // 프로필 정보
     public static class Profile {
         private String nickname;
 

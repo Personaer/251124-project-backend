@@ -1,4 +1,4 @@
-package store.kanggyoenggu.authservice.service.oauth;
+package store.kanggyoenggu.authservice.kakao;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
@@ -7,14 +7,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.reactive.function.client.WebClient;
-import store.kanggyoenggu.authservice.dto.oauth.KakaoTokenResponse;
-import store.kanggyoenggu.authservice.dto.oauth.KakaoUserInfo;
 
 import java.util.Map;
 
-/**
- * 카카오 OAuth2 API 호출 서비스 (WebClient를 HTTP 클라이언트로만 사용)
- */
+// 카카오 OAuth2 API 호출 서비스 (WebClient를 HTTP 클라이언트로만 사용)
 @Service
 public class KakaoOAuthService {
 
@@ -33,9 +29,7 @@ public class KakaoOAuthService {
         this.webClient = webClientBuilder.build();
     }
 
-    /**
-     * 카카오 인가 코드로 액세스 토큰 요청 (동기 방식)
-     */
+    // 카카오 인가 코드로 액세스 토큰 요청 (동기 방식)
     public KakaoTokenResponse getAccessToken(String authorizationCode) {
         String tokenUrl = "https://kauth.kakao.com/oauth/token";
 
@@ -58,9 +52,7 @@ public class KakaoOAuthService {
                 .block(); // 동기 방식으로 변환
     }
 
-    /**
-     * 액세스 토큰으로 카카오 사용자 정보 조회 (동기 방식)
-     */
+    // 액세스 토큰으로 카카오 사용자 정보 조회 (동기 방식)
     public KakaoUserInfo getUserInfo(String accessToken) {
         String userInfoUrl = "https://kapi.kakao.com/v2/user/me";
 
@@ -72,9 +64,7 @@ public class KakaoOAuthService {
                 .block(); // 동기 방식으로 변환
     }
 
-    /**
-     * 카카오 로그아웃 (동기 방식)
-     */
+    // 카카오 로그아웃 (동기 방식)
     @SuppressWarnings("unchecked")
     public Map<String, Object> logout(String accessToken) {
         String logoutUrl = "https://kapi.kakao.com/v1/user/logout";
@@ -87,9 +77,7 @@ public class KakaoOAuthService {
                 .block(); // 동기 방식으로 변환
     }
 
-    /**
-     * 카카오 연결 끊기 (회원 탈퇴) (동기 방식)
-     */
+    // 카카오 연결 끊기 (회원 탈퇴) (동기 방식)
     @SuppressWarnings("unchecked")
     public Map<String, Object> unlink(String accessToken) {
         String unlinkUrl = "https://kapi.kakao.com/v1/user/unlink";
@@ -102,3 +90,4 @@ public class KakaoOAuthService {
                 .block(); // 동기 방식으로 변환
     }
 }
+

@@ -1,4 +1,4 @@
-package store.kanggyoenggu.authservice.service.oauth;
+package store.kanggyoenggu.authservice.google;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
@@ -7,14 +7,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.reactive.function.client.WebClient;
-import store.kanggyoenggu.authservice.dto.oauth.GoogleTokenResponse;
-import store.kanggyoenggu.authservice.dto.oauth.GoogleUserInfo;
 
 import java.util.Map;
 
-/**
- * 구글 OAuth2 API 호출 서비스 (WebClient를 HTTP 클라이언트로만 사용)
- */
+// 구글 OAuth2 API 호출 서비스 (WebClient를 HTTP 클라이언트로만 사용)
 @Service
 public class GoogleOAuthService {
 
@@ -33,9 +29,7 @@ public class GoogleOAuthService {
         this.webClient = webClientBuilder.build();
     }
 
-    /**
-     * 구글 인가 코드로 액세스 토큰 요청 (동기 방식)
-     */
+    // 구글 인가 코드로 액세스 토큰 요청 (동기 방식)
     public GoogleTokenResponse getAccessToken(String authorizationCode) {
         String tokenUrl = "https://oauth2.googleapis.com/token";
 
@@ -55,9 +49,7 @@ public class GoogleOAuthService {
                 .block(); // 동기 방식으로 변환
     }
 
-    /**
-     * 액세스 토큰으로 구글 사용자 정보 조회 (동기 방식)
-     */
+    // 액세스 토큰으로 구글 사용자 정보 조회 (동기 방식)
     public GoogleUserInfo getUserInfo(String accessToken) {
         String userInfoUrl = "https://www.googleapis.com/oauth2/v2/userinfo";
 
@@ -69,9 +61,7 @@ public class GoogleOAuthService {
                 .block(); // 동기 방식으로 변환
     }
 
-    /**
-     * 구글 로그아웃 (동기 방식)
-     */
+    // 구글 로그아웃 (동기 방식)
     @SuppressWarnings("unchecked")
     public Map<String, Object> logout(String accessToken) {
         String logoutUrl = "https://oauth2.googleapis.com/revoke";
@@ -88,4 +78,3 @@ public class GoogleOAuthService {
                 .block(); // 동기 방식으로 변환
     }
 }
-

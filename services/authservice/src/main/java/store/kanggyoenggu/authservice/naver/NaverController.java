@@ -1,26 +1,22 @@
-package store.kanggyoenggu.authservice.controller.oauth;
+package store.kanggyoenggu.authservice.naver;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import store.kanggyoenggu.authservice.dto.*;
-import store.kanggyoenggu.authservice.dto.oauth.NaverTokenResponse;
-import store.kanggyoenggu.authservice.dto.oauth.NaverUserInfo;
-import store.kanggyoenggu.authservice.service.oauth.NaverOAuthService;
-import store.kanggyoenggu.authservice.service.JwtService;
+
+import store.kanggyoenggu.authservice.jwt.JwtService;
+import store.kanggyoenggu.authservice.response.*;
 
 import java.net.URI;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 
-/**
- * 네이버 OAuth2 인증 컨트롤러 (Spring MVC)
- */
+// 네이버 OAuth2 인증 컨트롤러 (Spring MVC)
 @RestController
 @RequestMapping("/auth/naver")
-public class NaverAuthController {
+public class NaverController {
 
     private final NaverOAuthService naverOAuthService;
     private final JwtService jwtService;
@@ -37,20 +33,16 @@ public class NaverAuthController {
     @Value("${frontend.callback-url}")
     private String frontendCallbackUrl;
 
-    public NaverAuthController(NaverOAuthService naverOAuthService, JwtService jwtService) {
+    public NaverController(NaverOAuthService naverOAuthService, JwtService jwtService) {
         this.naverOAuthService = naverOAuthService;
         this.jwtService = jwtService;
     }
 
-    /**
-     * 네이버 로그인 URL 생성
-     * POST /auth/naver/login
-     * 
-     * RESTful API 방식: JSON 응답으로 네이버 로그인 URL 반환
-     * 프론트엔드에서 받아서 처리
-     * 
-     * 로그인은 상태를 변경하는 작업이므로 POST 메서드 사용
-     */
+    // 네이버 로그인 URL 생성
+    // POST /auth/naver/login
+    // RESTful API 방식: JSON 응답으로 네이버 로그인 URL 반환
+    // 프론트엔드에서 받아서 처리
+    // 로그인은 상태를 변경하는 작업이므로 POST 메서드 사용
     @PostMapping("/login")
     public ResponseEntity<LoginResponse> naverLogin() {
         // 네이버는 state 파라미터를 권장하지만 필수는 아님
@@ -63,21 +55,11 @@ public class NaverAuthController {
                 URLEncoder.encode(naverRedirectUri, StandardCharsets.UTF_8),
                 state);
 
-        System.out.println("========== 네이버 로그인 URL 생성 ==========");
-        System.out.println("Authorization URI: " + naverAuthorizationUri);
-        System.out.println("Client ID: " + naverClientId);
-        System.out.println("Redirect URI: " + naverRedirectUri);
-        System.out.println("State: " + state);
-        System.out.println("Generated URL: " + naverAuthUrl);
-        System.out.println("==========================================");
-
         return ResponseEntity.ok(LoginResponse.success(naverAuthUrl));
     }
 
-    /**
-     * 네이버 OAuth2 콜백 처리 (동기 방식)
-     * GET /auth/naver/callback?code=xxx&state=xxx (네이버 표준)
-     */
+    // 네이버 OAuth2 콜백 처리 (동기 방식)
+    // GET /auth/naver/callback?code=xxx&state=xxx (네이버 표준)
     @GetMapping("/callback")
     public ResponseEntity<Void> naverCallback(
             @RequestParam(required = false) String code,
@@ -97,9 +79,7 @@ public class NaverAuthController {
         return new ResponseEntity<>(headers, HttpStatus.FOUND);
     }
 
-    /**
-     * 공통 콜백 처리 메서드
-     */
+    // 공통 콜백 처리 메서드
     private ResponseEntity<Void> processCallback(String code) {
         try {
             // 1. 액세스 토큰 요청 (동기 처리)
@@ -107,11 +87,7 @@ public class NaverAuthController {
             String accessToken = tokenResponse.getAccessToken();
 
             // 네이버 액세스 토큰 출력
-            System.out.println("========== 네이버 액세스 토큰 ==========");
             System.out.println("Access Token: " + accessToken);
-            System.out.println("Token Type: " + tokenResponse.getTokenType());
-            System.out.println("Expires In: " + tokenResponse.getExpiresIn());
-            System.out.println("========================================");
 
             // 2. 사용자 정보 조회 (동기 처리)
             NaverUserInfo userInfo = naverOAuthService.getUserInfo(accessToken);
@@ -122,14 +98,6 @@ public class NaverAuthController {
             String nickname = response.getNickname() != null ? response.getNickname() : "사용자";
             String name = response.getName() != null ? response.getName() : nickname;
             String profileImageUrl = response.getProfile_image() != null ? response.getProfile_image() : "없음";
-
-            // 네이버 사용자 정보 출력 (가입 정보)
-            System.out.println("\n========== 네이버 가입 정보 ==========");
-            System.out.println("네이버 ID: " + naverId);
-            System.out.println("이름: " + name);
-            System.out.println("닉네임: " + nickname);
-            System.out.println("프로필 이미지: " + profileImageUrl);
-            System.out.println("======================================\n");
 
             // 4. JWT 토큰 생성 (네이버 ID를 Long으로 변환 시도, 실패하면 String 사용)
             Long userId;
@@ -142,11 +110,7 @@ public class NaverAuthController {
             String jwtToken = jwtService.generateToken(userId, nickname);
 
             // 생성된 JWT 토큰 출력
-            System.out.println("========== 생성된 JWT 토큰 ==========");
             System.out.println("JWT Token: " + jwtToken);
-            System.out.println("Naver ID: " + naverId);
-            System.out.println("Nickname: " + nickname);
-            System.out.println("=====================================\n");
 
             // 5. 프론트엔드로 리다이렉트 (토큰 포함)
             return createRedirectResponse(frontendCallbackUrl, jwtToken, null);
@@ -161,9 +125,7 @@ public class NaverAuthController {
         }
     }
 
-    /**
-     * 안전한 리다이렉트 응답 생성
-     */
+    // 안전한 리다이렉트 응답 생성
     private ResponseEntity<Void> createRedirectResponse(String baseUrl, String token, String error) {
         try {
             // baseUrl 유효성 검사
@@ -178,16 +140,12 @@ public class NaverAuthController {
                 // 성공: 토큰 포함
                 String encodedToken = URLEncoder.encode(token, StandardCharsets.UTF_8);
                 redirectUrl = String.format("%s?token=%s", baseUrl, encodedToken);
-                System.out.println(
-                        "리다이렉트 URL (성공): " + redirectUrl.substring(0, Math.min(100, redirectUrl.length())) + "...");
             } else if (error != null) {
                 // 실패: 에러 포함
                 redirectUrl = String.format("%s?error=%s", baseUrl, URLEncoder.encode(error, StandardCharsets.UTF_8));
-                System.out.println("리다이렉트 URL (실패): " + redirectUrl);
             } else {
                 // 기본 리다이렉트
                 redirectUrl = baseUrl;
-                System.out.println("리다이렉트 URL (기본): " + redirectUrl);
             }
 
             // URI 생성 및 검증
@@ -222,13 +180,10 @@ public class NaverAuthController {
         }
     }
 
-    /**
-     * 사용자 정보 조회
-     * GET /auth/naver/user
-     * 
-     * Gateway에서 이미 JWT 검증을 완료하고 헤더에 사용자 정보를 추가했으므로,
-     * 중복 검증 없이 헤더에서 직접 사용자 정보를 추출합니다.
-     */
+    // 사용자 정보 조회
+    // GET /auth/naver/user
+    // Gateway에서 이미 JWT 검증을 완료하고 헤더에 사용자 정보를 추가했으므로,
+    // 중복 검증 없이 헤더에서 직접 사용자 정보를 추출합니다.
     @GetMapping("/user")
     public ResponseEntity<UserInfoResponse> getUserInfo(
             @RequestHeader("X-User-Id") String userId,
@@ -243,10 +198,8 @@ public class NaverAuthController {
         return ResponseEntity.ok(UserInfoResponse.success(userData));
     }
 
-    /**
-     * 로그아웃
-     * GET /auth/naver/logout
-     */
+    // 로그아웃
+    // GET /auth/naver/logout
     @GetMapping("/logout")
     public ResponseEntity<ApiResponse> logout() {
         return ResponseEntity.ok(ApiResponse.success("로그아웃 성공"));

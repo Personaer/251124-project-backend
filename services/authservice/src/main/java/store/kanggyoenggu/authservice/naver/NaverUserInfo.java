@@ -1,10 +1,8 @@
-package store.kanggyoenggu.authservice.dto.oauth;
+package store.kanggyoenggu.authservice.naver;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-/**
- * 네이버 사용자 정보 DTO
- */
+// 네이버 사용자 정보 DTO
 public class NaverUserInfo {
 
     @JsonProperty("resultcode")
@@ -41,9 +39,7 @@ public class NaverUserInfo {
         this.response = response;
     }
 
-    /**
-     * 네이버 사용자 정보 응답
-     */
+    // 네이버 사용자 정보 응답
     public static class Response {
         private String id;
         private String nickname;

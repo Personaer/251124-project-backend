@@ -1,8 +1,6 @@
-package store.kanggyoenggu.authservice.dto;
+package store.kanggyoenggu.authservice.response;
 
-/**
- * 공통 API 응답 DTO
- */
+// 공통 API 응답
 public class ApiResponse {
 
     private boolean success;
@@ -42,4 +40,3 @@ public class ApiResponse {
         this.message = message;
     }
 }
-

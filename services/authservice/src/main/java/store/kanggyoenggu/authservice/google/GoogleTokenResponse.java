@@ -1,10 +1,8 @@
-package store.kanggyoenggu.authservice.dto.oauth;
+package store.kanggyoenggu.authservice.google;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-/**
- * 구글 토큰 응답 DTO
- */
+// 구글 토큰 응답 DTO
 public class GoogleTokenResponse {
 
     @JsonProperty("access_token")
@@ -63,4 +61,3 @@ public class GoogleTokenResponse {
         this.scope = scope;
     }
 }
-

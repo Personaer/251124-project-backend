@@ -1,8 +1,6 @@
-package store.kanggyoenggu.authservice.dto;
+package store.kanggyoenggu.authservice.response;
 
-/**
- * 사용자 정보 응답 DTO
- */
+// 사용자 정보 응답
 public class UserInfoResponse {
 
     private boolean success;
@@ -52,9 +50,7 @@ public class UserInfoResponse {
         this.user = user;
     }
 
-    /**
-     * 사용자 데이터
-     */
+    // 사용자 데이터
     public static class UserData {
         private String id;
         private Long kakaoId;
@@ -95,4 +91,3 @@ public class UserInfoResponse {
         }
     }
 }
-

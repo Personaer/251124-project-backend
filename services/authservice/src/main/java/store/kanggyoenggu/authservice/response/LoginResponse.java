@@ -1,8 +1,6 @@
-package store.kanggyoenggu.authservice.dto;
+package store.kanggyoenggu.authservice.response;
 
-/**
- * 로그인 응답 DTO
- */
+// 로그인 응답
 public class LoginResponse {
 
     private boolean success;
@@ -52,4 +50,3 @@ public class LoginResponse {
         this.authUrl = authUrl;
     }
 }
-

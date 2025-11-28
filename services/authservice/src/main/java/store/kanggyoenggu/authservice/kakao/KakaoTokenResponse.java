@@ -1,10 +1,8 @@
-package store.kanggyoenggu.authservice.dto.oauth;
+package store.kanggyoenggu.authservice.kakao;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-/**
- * 카카오 토큰 응답 DTO
- */
+// 카카오 토큰 응답 DTO
 public class KakaoTokenResponse {
 
     @JsonProperty("access_token")

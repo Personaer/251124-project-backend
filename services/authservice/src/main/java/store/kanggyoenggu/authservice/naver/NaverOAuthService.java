@@ -1,4 +1,4 @@
-package store.kanggyoenggu.authservice.service.oauth;
+package store.kanggyoenggu.authservice.naver;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
@@ -7,14 +7,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.reactive.function.client.WebClient;
-import store.kanggyoenggu.authservice.dto.oauth.NaverTokenResponse;
-import store.kanggyoenggu.authservice.dto.oauth.NaverUserInfo;
 
 import java.util.Map;
 
-/**
- * 네이버 OAuth2 API 호출 서비스 (WebClient를 HTTP 클라이언트로만 사용)
- */
+// 네이버 OAuth2 API 호출 서비스 (WebClient를 HTTP 클라이언트로만 사용)
 @Service
 public class NaverOAuthService {
 
@@ -33,9 +29,7 @@ public class NaverOAuthService {
         this.webClient = webClientBuilder.build();
     }
 
-    /**
-     * 네이버 인가 코드로 액세스 토큰 요청 (동기 방식)
-     */
+    // 네이버 인가 코드로 액세스 토큰 요청 (동기 방식)
     public NaverTokenResponse getAccessToken(String authorizationCode) {
         String tokenUrl = "https://nid.naver.com/oauth2.0/token";
 
@@ -55,9 +49,7 @@ public class NaverOAuthService {
                 .block(); // 동기 방식으로 변환
     }
 
-    /**
-     * 액세스 토큰으로 네이버 사용자 정보 조회 (동기 방식)
-     */
+    // 액세스 토큰으로 네이버 사용자 정보 조회 (동기 방식)
     public NaverUserInfo getUserInfo(String accessToken) {
         String userInfoUrl = "https://openapi.naver.com/v1/nid/me";
 
@@ -69,9 +61,7 @@ public class NaverOAuthService {
                 .block(); // 동기 방식으로 변환
     }
 
-    /**
-     * 네이버 로그아웃 (동기 방식)
-     */
+    // 네이버 로그아웃 (동기 방식)
     @SuppressWarnings("unchecked")
     public Map<String, Object> logout(String accessToken) {
         String logoutUrl = "https://nid.naver.com/oauth2.0/token";
@@ -92,3 +82,4 @@ public class NaverOAuthService {
                 .block(); // 동기 방식으로 변환
     }
 }
+

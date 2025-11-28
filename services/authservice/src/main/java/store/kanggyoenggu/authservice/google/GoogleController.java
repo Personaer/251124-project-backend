@@ -1,26 +1,22 @@
-package store.kanggyoenggu.authservice.controller.oauth;
+package store.kanggyoenggu.authservice.google;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import store.kanggyoenggu.authservice.dto.*;
-import store.kanggyoenggu.authservice.dto.oauth.GoogleTokenResponse;
-import store.kanggyoenggu.authservice.dto.oauth.GoogleUserInfo;
-import store.kanggyoenggu.authservice.service.oauth.GoogleOAuthService;
-import store.kanggyoenggu.authservice.service.JwtService;
+
+import store.kanggyoenggu.authservice.jwt.JwtService;
+import store.kanggyoenggu.authservice.response.*;
 
 import java.net.URI;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 
-/**
- * 구글 OAuth2 인증 컨트롤러 (Spring MVC)
- */
+// 구글 OAuth2 인증 컨트롤러 (Spring MVC)
 @RestController
 @RequestMapping("/auth/google")
-public class GoogleAuthController {
+public class GoogleController {
 
     private final GoogleOAuthService googleOAuthService;
     private final JwtService jwtService;
@@ -37,20 +33,16 @@ public class GoogleAuthController {
     @Value("${frontend.callback-url}")
     private String frontendCallbackUrl;
 
-    public GoogleAuthController(GoogleOAuthService googleOAuthService, JwtService jwtService) {
+    public GoogleController(GoogleOAuthService googleOAuthService, JwtService jwtService) {
         this.googleOAuthService = googleOAuthService;
         this.jwtService = jwtService;
     }
 
-    /**
-     * 구글 로그인 URL 생성
-     * POST /auth/google/login
-     * 
-     * RESTful API 방식: JSON 응답으로 구글 로그인 URL 반환
-     * 프론트엔드에서 받아서 처리
-     * 
-     * 로그인은 상태를 변경하는 작업이므로 POST 메서드 사용
-     */
+    // 구글 로그인 URL 생성
+    // POST /auth/google/login
+    // RESTful API 방식: JSON 응답으로 구글 로그인 URL 반환
+    // 프론트엔드에서 받아서 처리
+    // 로그인은 상태를 변경하는 작업이므로 POST 메서드 사용
     @PostMapping("/login")
     public ResponseEntity<LoginResponse> googleLogin() {
         String scope = "openid profile email";
@@ -64,10 +56,8 @@ public class GoogleAuthController {
         return ResponseEntity.ok(LoginResponse.success(googleAuthUrl));
     }
 
-    /**
-     * 구글 OAuth2 콜백 처리 (동기 방식)
-     * GET /auth/google/callback?code=xxx (구글 표준)
-     */
+    // 구글 OAuth2 콜백 처리 (동기 방식)
+    // GET /auth/google/callback?code=xxx (구글 표준)
     @GetMapping("/callback")
     public ResponseEntity<Void> googleCallback(@RequestParam(required = false) String code) {
         // GET 방식 (구글 표준)
@@ -85,9 +75,7 @@ public class GoogleAuthController {
         return new ResponseEntity<>(headers, HttpStatus.FOUND);
     }
 
-    /**
-     * 공통 콜백 처리 메서드
-     */
+    // 공통 콜백 처리 메서드
     private ResponseEntity<Void> processCallback(String code) {
         try {
             // frontendCallbackUrl 유효성 검사
@@ -101,11 +89,7 @@ public class GoogleAuthController {
             String accessToken = tokenResponse.getAccessToken();
 
             // 구글 액세스 토큰 출력
-            System.out.println("========== 구글 액세스 토큰 ==========");
             System.out.println("Access Token: " + accessToken);
-            System.out.println("Token Type: " + tokenResponse.getTokenType());
-            System.out.println("Expires In: " + tokenResponse.getExpiresIn());
-            System.out.println("========================================");
 
             // 2. 사용자 정보 조회 (동기 처리)
             GoogleUserInfo userInfo = googleOAuthService.getUserInfo(accessToken);
@@ -115,14 +99,6 @@ public class GoogleAuthController {
             String name = userInfo.getName() != null ? userInfo.getName() : "사용자";
             String nickname = name; // 구글은 별명이 없으므로 이름을 별명으로 사용
             String profileImageUrl = userInfo.getPicture() != null ? userInfo.getPicture() : "없음";
-
-            // 구글 사용자 정보 출력 (가입 정보)
-            System.out.println("\n========== 구글 가입 정보 ==========");
-            System.out.println("구글 ID: " + googleId);
-            System.out.println("이름: " + name);
-            System.out.println("닉네임: " + nickname);
-            System.out.println("프로필 이미지: " + profileImageUrl);
-            System.out.println("======================================\n");
 
             // 4. JWT 토큰 생성 (구글 ID를 Long으로 변환 시도, 실패하면 String 사용)
             Long userId;
@@ -135,11 +111,7 @@ public class GoogleAuthController {
             String jwtToken = jwtService.generateToken(userId, nickname);
 
             // 생성된 JWT 토큰 출력
-            System.out.println("========== 생성된 JWT 토큰 ==========");
             System.out.println("JWT Token: " + jwtToken);
-            System.out.println("Google ID: " + googleId);
-            System.out.println("Nickname: " + nickname);
-            System.out.println("=====================================\n");
 
             // 5. 프론트엔드로 리다이렉트 (토큰 포함)
             return createRedirectResponse(frontendCallbackUrl, jwtToken, null);
@@ -154,9 +126,7 @@ public class GoogleAuthController {
         }
     }
 
-    /**
-     * 안전한 리다이렉트 응답 생성
-     */
+    // 안전한 리다이렉트 응답 생성
     private ResponseEntity<Void> createRedirectResponse(String baseUrl, String token, String error) {
         try {
             // baseUrl 유효성 검사
@@ -171,16 +141,12 @@ public class GoogleAuthController {
                 // 성공: 토큰 포함
                 String encodedToken = URLEncoder.encode(token, StandardCharsets.UTF_8);
                 redirectUrl = String.format("%s?token=%s", baseUrl, encodedToken);
-                System.out.println(
-                        "리다이렉트 URL (성공): " + redirectUrl.substring(0, Math.min(100, redirectUrl.length())) + "...");
             } else if (error != null) {
                 // 실패: 에러 포함
                 redirectUrl = String.format("%s?error=%s", baseUrl, URLEncoder.encode(error, StandardCharsets.UTF_8));
-                System.out.println("리다이렉트 URL (실패): " + redirectUrl);
             } else {
                 // 기본 리다이렉트
                 redirectUrl = baseUrl;
-                System.out.println("리다이렉트 URL (기본): " + redirectUrl);
             }
 
             // URI 생성 및 검증
@@ -215,20 +181,15 @@ public class GoogleAuthController {
         }
     }
 
-    /**
-     * 에러 응답 생성
-     */
+    // 에러 응답 생성
     private ResponseEntity<Void> createErrorResponse(String errorMessage) {
         return createRedirectResponse(frontendCallbackUrl, null, errorMessage);
     }
 
-    /**
-     * 사용자 정보 조회
-     * GET /auth/google/user
-     * 
-     * Gateway에서 이미 JWT 검증을 완료하고 헤더에 사용자 정보를 추가했으므로,
-     * 중복 검증 없이 헤더에서 직접 사용자 정보를 추출합니다.
-     */
+    // 사용자 정보 조회
+    // GET /auth/google/user
+    // Gateway에서 이미 JWT 검증을 완료하고 헤더에 사용자 정보를 추가했으므로,
+    // 중복 검증 없이 헤더에서 직접 사용자 정보를 추출합니다.
     @GetMapping("/user")
     public ResponseEntity<UserInfoResponse> getUserInfo(
             @RequestHeader("X-User-Id") String userId,
@@ -243,10 +204,8 @@ public class GoogleAuthController {
         return ResponseEntity.ok(UserInfoResponse.success(userData));
     }
 
-    /**
-     * 로그아웃
-     * GET /auth/google/logout
-     */
+    // 로그아웃
+    // GET /auth/google/logout
     @GetMapping("/logout")
     public ResponseEntity<ApiResponse> logout() {
         return ResponseEntity.ok(ApiResponse.success("로그아웃 성공"));

@@ -1,10 +1,8 @@
-package store.kanggyoenggu.authservice.dto.oauth;
+package store.kanggyoenggu.authservice.naver;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-/**
- * 네이버 토큰 응답 DTO
- */
+// 네이버 토큰 응답 DTO
 public class NaverTokenResponse {
 
     @JsonProperty("access_token")
@@ -74,4 +72,3 @@ public class NaverTokenResponse {
         this.errorDescription = errorDescription;
     }
 }
-

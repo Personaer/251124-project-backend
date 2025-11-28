@@ -1,4 +1,4 @@
-package store.kanggyoenggu.authservice.service;
+package store.kanggyoenggu.authservice.jwt;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
@@ -11,9 +11,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Date;
 import java.util.Map;
 
-/**
- * JWT 토큰 생성 및 검증 서비스
- */
+// JWT 토큰 생성 및 검증 서비스
 @Service
 public class JwtService {
 
@@ -27,9 +25,7 @@ public class JwtService {
         return Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
     }
 
-    /**
-     * JWT 토큰 생성
-     */
+    // JWT 토큰 생성
     public String generateToken(Long kakaoId, String nickname) {
         SecretKey key = getSecretKey();
 
@@ -46,9 +42,7 @@ public class JwtService {
                 .compact();
     }
 
-    /**
-     * JWT 토큰 파싱 및 검증
-     */
+    // JWT 토큰 파싱 및 검증
     public Map<String, Object> parseToken(String token) {
         SecretKey key = getSecretKey();
 
@@ -61,9 +55,7 @@ public class JwtService {
         return claims;
     }
 
-    /**
-     * JWT 토큰 유효성 검증
-     */
+    // JWT 토큰 유효성 검증
     public boolean validateToken(String token) {
         try {
             parseToken(token);

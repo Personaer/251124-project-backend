@@ -1,32 +1,31 @@
-package store.kanggyoenggu.authservice.controller.oauth;
+package store.kanggyoenggu.authservice.auth;
+
+import java.net.URI;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-import store.kanggyoenggu.authservice.dto.oauth.KakaoTokenResponse;
-import store.kanggyoenggu.authservice.dto.oauth.KakaoUserInfo;
-import store.kanggyoenggu.authservice.dto.oauth.NaverTokenResponse;
-import store.kanggyoenggu.authservice.dto.oauth.NaverUserInfo;
-import store.kanggyoenggu.authservice.dto.oauth.GoogleTokenResponse;
-import store.kanggyoenggu.authservice.dto.oauth.GoogleUserInfo;
-import store.kanggyoenggu.authservice.service.oauth.KakaoOAuthService;
-import store.kanggyoenggu.authservice.service.oauth.NaverOAuthService;
-import store.kanggyoenggu.authservice.service.oauth.GoogleOAuthService;
-import store.kanggyoenggu.authservice.service.JwtService;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
-import java.net.URI;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
-import java.util.Map;
+import store.kanggyoenggu.authservice.google.GoogleOAuthService;
+import store.kanggyoenggu.authservice.google.GoogleTokenResponse;
+import store.kanggyoenggu.authservice.google.GoogleUserInfo;
+import store.kanggyoenggu.authservice.jwt.JwtService;
+import store.kanggyoenggu.authservice.kakao.KakaoOAuthService;
+import store.kanggyoenggu.authservice.kakao.KakaoTokenResponse;
+import store.kanggyoenggu.authservice.kakao.KakaoUserInfo;
+import store.kanggyoenggu.authservice.naver.NaverOAuthService;
+import store.kanggyoenggu.authservice.naver.NaverTokenResponse;
+import store.kanggyoenggu.authservice.naver.NaverUserInfo;
 
-/**
- * OAuth2 콜백 컨트롤러
- * 카카오 개발자 콘솔에서 /oauth2/kakao/callback으로 설정된 경우를 위한 별도 컨트롤러
- * 네이버 개발자 콘솔에서 /oauth2/naver/callback으로 설정된 경우를 위한 별도 컨트롤러
- * 구글 개발자 콘솔에서 /oauth2/google/callback으로 설정된 경우를 위한 별도 컨트롤러
- */
+// OAuth2 콜백 컨트롤러
+// 카카오, 네이버, 구글 OAuth2 콜백 처리
 @RestController
 @RequestMapping("/oauth2")
 public class OAuth2CallbackController {
@@ -50,57 +49,30 @@ public class OAuth2CallbackController {
         this.jwtService = jwtService;
     }
 
-    /**
-     * 카카오 OAuth2 콜백 처리
-     * GET /oauth2/kakao/callback?code=xxx (카카오 표준)
-     * POST /oauth2/kakao/callback (body에 code 포함, 비표준)
-     * 
-     * 카카오 개발자 콘솔에서 redirect_uri를 /oauth2/kakao/callback으로 설정한 경우
-     */
+    // 카카오 OAuth2 콜백 처리
     @GetMapping("/kakao/callback")
-    @PostMapping("/kakao/callback")
-    public ResponseEntity<Void> kakaoCallback(@RequestParam(required = false) String code,
-            @RequestBody(required = false) Map<String, String> body) {
-        // GET 방식 (카카오 표준)
-        String authCode = code;
-        if (authCode == null && body != null && body.containsKey("code")) {
-            // POST 방식 (body에서 code 추출)
-            authCode = body.get("code");
+    public ResponseEntity<Void> kakaoCallback(@RequestParam(required = false) String code) {
+        if (code != null) {
+            return processKakaoCallback(code);
         }
 
-        if (authCode == null) {
-            // 둘 다 없는 경우 에러
-            String errorUrl = String.format(
-                    "%s?error=%s",
-                    frontendCallbackUrl,
-                    URLEncoder.encode("missing_code", StandardCharsets.UTF_8));
-            HttpHeaders headers = new HttpHeaders();
-            headers.setLocation(URI.create(errorUrl));
-            return new ResponseEntity<>(headers, HttpStatus.FOUND);
-        }
-
-        return processKakaoCallback(authCode);
+        // code가 없는 경우 에러
+        String errorUrl = String.format(
+                "%s?error=%s",
+                frontendCallbackUrl,
+                URLEncoder.encode("missing_code", StandardCharsets.UTF_8));
+        HttpHeaders headers = new HttpHeaders();
+        headers.setLocation(URI.create(errorUrl));
+        return new ResponseEntity<>(headers, HttpStatus.FOUND);
     }
 
-    /**
-     * 네이버 OAuth2 콜백 처리
-     * GET /oauth2/naver/callback?code=xxx&state=xxx (네이버 표준)
-     * 
-     * 네이버 개발자 콘솔에서 redirect_uri를 /oauth2/naver/callback으로 설정한 경우
-     */
+    // 네이버 OAuth2 콜백 처리
     @GetMapping("/naver/callback")
     public ResponseEntity<Void> naverCallback(
             @RequestParam(required = false) String code,
             @RequestParam(required = false) String state,
             @RequestParam(required = false) String error,
             @RequestParam(required = false) String error_description) {
-
-        System.out.println("\n========== 네이버 콜백 진입 ==========");
-        System.out.println("Code: " + code);
-        System.out.println("State: " + state);
-        System.out.println("Error: " + error);
-        System.out.println("Error Description: " + error_description);
-        System.out.println("=====================================\n");
 
         // 네이버에서 에러를 반환한 경우
         if (error != null) {
@@ -115,7 +87,6 @@ public class OAuth2CallbackController {
             return new ResponseEntity<>(headers, HttpStatus.FOUND);
         }
 
-        // GET 방식 (네이버 표준)
         if (code != null) {
             return processNaverCallback(code);
         }
@@ -131,21 +102,11 @@ public class OAuth2CallbackController {
         return new ResponseEntity<>(headers, HttpStatus.FOUND);
     }
 
-    /**
-     * 구글 OAuth2 콜백 처리
-     * GET /oauth2/google/callback?code=xxx (구글 표준)
-     * 
-     * 구글 개발자 콘솔에서 redirect_uri를 /oauth2/google/callback으로 설정한 경우
-     */
+    // 구글 OAuth2 콜백 처리
     @GetMapping("/google/callback")
     public ResponseEntity<Void> googleCallback(
             @RequestParam(required = false) String code,
             @RequestParam(required = false) String error) {
-        
-        System.out.println("\n========== 구글 콜백 진입 ==========");
-        System.out.println("Code: " + code);
-        System.out.println("Error: " + error);
-        System.out.println("=====================================\n");
 
         // 구글에서 에러를 반환한 경우
         if (error != null) {
@@ -159,7 +120,6 @@ public class OAuth2CallbackController {
             return new ResponseEntity<>(headers, HttpStatus.FOUND);
         }
 
-        // GET 방식 (구글 표준)
         if (code != null) {
             return processGoogleCallback(code);
         }
@@ -175,9 +135,7 @@ public class OAuth2CallbackController {
         return new ResponseEntity<>(headers, HttpStatus.FOUND);
     }
 
-    /**
-     * 카카오 콜백 처리 메서드
-     */
+    // 카카오 콜백 처리 메서드
     private ResponseEntity<Void> processKakaoCallback(String code) {
         try {
             // frontendCallbackUrl 유효성 검사
@@ -186,18 +144,14 @@ public class OAuth2CallbackController {
                 return createErrorResponse("FRONTEND_CALLBACK_URL_NOT_CONFIGURED");
             }
 
-            // 1. 액세스 토큰 요청 (동기 처리)
+            // 1. 액세스 토큰 요청
             KakaoTokenResponse tokenResponse = kakaoOAuthService.getAccessToken(code);
             String accessToken = tokenResponse.getAccessToken();
 
             // 카카오 액세스 토큰 출력
-            System.out.println("========== 카카오 액세스 토큰 ==========");
             System.out.println("Access Token: " + accessToken);
-            System.out.println("Token Type: " + tokenResponse.getTokenType());
-            System.out.println("Expires In: " + tokenResponse.getExpiresIn());
-            System.out.println("========================================");
 
-            // 2. 사용자 정보 조회 (동기 처리)
+            // 2. 사용자 정보 조회
             KakaoUserInfo userInfo = kakaoOAuthService.getUserInfo(accessToken);
 
             // 3. 카카오 사용자 정보 추출
@@ -213,24 +167,11 @@ public class OAuth2CallbackController {
                     ? (profile.getThumbnailImageUrl() != null ? profile.getThumbnailImageUrl() : "없음")
                     : "없음";
 
-            // 카카오 사용자 정보 출력 (가입 정보)
-            System.out.println("\n========== 카카오 가입 정보 ==========");
-            System.out.println("카카오 ID: " + kakaoId);
-            System.out.println("닉네임: " + nickname);
-            System.out.println("프로필 이미지: " + profileImageUrl);
-            System.out.println("썸네일 이미지: " + thumbnailImageUrl);
-            System.out.println("연결 시간: " + (userInfo.getConnectedAt() != null ? userInfo.getConnectedAt() : "없음"));
-            System.out.println("======================================\n");
-
             // 4. JWT 토큰 생성
             String jwtToken = jwtService.generateToken(kakaoId, nickname);
 
             // 생성된 JWT 토큰 출력
-            System.out.println("========== 생성된 JWT 토큰 ==========");
             System.out.println("JWT Token: " + jwtToken);
-            System.out.println("Kakao ID: " + kakaoId);
-            System.out.println("Nickname: " + nickname);
-            System.out.println("=====================================\n");
 
             // 5. 프론트엔드로 리다이렉트 (토큰 포함)
             return createRedirectResponse(frontendCallbackUrl, jwtToken, null);
@@ -245,9 +186,7 @@ public class OAuth2CallbackController {
         }
     }
 
-    /**
-     * 네이버 콜백 처리 메서드
-     */
+    // 네이버 콜백 처리 메서드
     private ResponseEntity<Void> processNaverCallback(String code) {
         try {
             // frontendCallbackUrl 유효성 검사
@@ -256,18 +195,14 @@ public class OAuth2CallbackController {
                 return createErrorResponse("FRONTEND_CALLBACK_URL_NOT_CONFIGURED");
             }
 
-            // 1. 액세스 토큰 요청 (동기 처리)
+            // 1. 액세스 토큰 요청
             NaverTokenResponse tokenResponse = naverOAuthService.getAccessToken(code);
             String accessToken = tokenResponse.getAccessToken();
 
             // 네이버 액세스 토큰 출력
-            System.out.println("========== 네이버 액세스 토큰 ==========");
             System.out.println("Access Token: " + accessToken);
-            System.out.println("Token Type: " + tokenResponse.getTokenType());
-            System.out.println("Expires In: " + tokenResponse.getExpiresIn());
-            System.out.println("========================================");
 
-            // 2. 사용자 정보 조회 (동기 처리)
+            // 2. 사용자 정보 조회
             NaverUserInfo userInfo = naverOAuthService.getUserInfo(accessToken);
 
             // 3. 네이버 사용자 정보 추출
@@ -277,15 +212,7 @@ public class OAuth2CallbackController {
             String name = response.getName() != null ? response.getName() : nickname;
             String profileImageUrl = response.getProfile_image() != null ? response.getProfile_image() : "없음";
 
-            // 네이버 사용자 정보 출력 (가입 정보)
-            System.out.println("\n========== 네이버 가입 정보 ==========");
-            System.out.println("네이버 ID: " + naverId);
-            System.out.println("이름: " + name);
-            System.out.println("닉네임: " + nickname);
-            System.out.println("프로필 이미지: " + profileImageUrl);
-            System.out.println("======================================\n");
-
-            // 4. JWT 토큰 생성 (네이버 ID를 Long으로 변환 시도, 실패하면 String 사용)
+            // 4. JWT 토큰 생성
             Long userId;
             try {
                 userId = Long.parseLong(naverId);
@@ -296,11 +223,7 @@ public class OAuth2CallbackController {
             String jwtToken = jwtService.generateToken(userId, nickname);
 
             // 생성된 JWT 토큰 출력
-            System.out.println("========== 생성된 JWT 토큰 ==========");
             System.out.println("JWT Token: " + jwtToken);
-            System.out.println("Naver ID: " + naverId);
-            System.out.println("Nickname: " + nickname);
-            System.out.println("=====================================\n");
 
             // 5. 프론트엔드로 리다이렉트 (토큰 포함)
             return createRedirectResponse(frontendCallbackUrl, jwtToken, null);
@@ -315,9 +238,7 @@ public class OAuth2CallbackController {
         }
     }
 
-    /**
-     * 구글 콜백 처리 메서드
-     */
+    // 구글 콜백 처리 메서드
     private ResponseEntity<Void> processGoogleCallback(String code) {
         try {
             // frontendCallbackUrl 유효성 검사
@@ -326,18 +247,14 @@ public class OAuth2CallbackController {
                 return createErrorResponse("FRONTEND_CALLBACK_URL_NOT_CONFIGURED");
             }
 
-            // 1. 액세스 토큰 요청 (동기 처리)
+            // 1. 액세스 토큰 요청
             GoogleTokenResponse tokenResponse = googleOAuthService.getAccessToken(code);
             String accessToken = tokenResponse.getAccessToken();
 
             // 구글 액세스 토큰 출력
-            System.out.println("========== 구글 액세스 토큰 ==========");
             System.out.println("Access Token: " + accessToken);
-            System.out.println("Token Type: " + tokenResponse.getTokenType());
-            System.out.println("Expires In: " + tokenResponse.getExpiresIn());
-            System.out.println("========================================");
 
-            // 2. 사용자 정보 조회 (동기 처리)
+            // 2. 사용자 정보 조회
             GoogleUserInfo userInfo = googleOAuthService.getUserInfo(accessToken);
 
             // 3. 구글 사용자 정보 추출
@@ -346,15 +263,7 @@ public class OAuth2CallbackController {
             String nickname = name; // 구글은 별명이 없으므로 이름을 별명으로 사용
             String profileImageUrl = userInfo.getPicture() != null ? userInfo.getPicture() : "없음";
 
-            // 구글 사용자 정보 출력 (가입 정보)
-            System.out.println("\n========== 구글 가입 정보 ==========");
-            System.out.println("구글 ID: " + googleId);
-            System.out.println("이름: " + name);
-            System.out.println("닉네임: " + nickname);
-            System.out.println("프로필 이미지: " + profileImageUrl);
-            System.out.println("======================================\n");
-
-            // 4. JWT 토큰 생성 (구글 ID를 Long으로 변환 시도, 실패하면 String 사용)
+            // 4. JWT 토큰 생성
             Long userId;
             try {
                 userId = Long.parseLong(googleId);
@@ -365,11 +274,7 @@ public class OAuth2CallbackController {
             String jwtToken = jwtService.generateToken(userId, nickname);
 
             // 생성된 JWT 토큰 출력
-            System.out.println("========== 생성된 JWT 토큰 ==========");
             System.out.println("JWT Token: " + jwtToken);
-            System.out.println("Google ID: " + googleId);
-            System.out.println("Nickname: " + nickname);
-            System.out.println("=====================================\n");
 
             // 5. 프론트엔드로 리다이렉트 (토큰 포함)
             return createRedirectResponse(frontendCallbackUrl, jwtToken, null);
@@ -384,9 +289,7 @@ public class OAuth2CallbackController {
         }
     }
 
-    /**
-     * 안전한 리다이렉트 응답 생성
-     */
+    // 안전한 리다이렉트 응답 생성
     private ResponseEntity<Void> createRedirectResponse(String baseUrl, String token, String error) {
         try {
             // baseUrl 유효성 검사
@@ -401,16 +304,12 @@ public class OAuth2CallbackController {
                 // 성공: 토큰 포함
                 String encodedToken = URLEncoder.encode(token, StandardCharsets.UTF_8);
                 redirectUrl = String.format("%s?token=%s", baseUrl, encodedToken);
-                System.out.println(
-                        "리다이렉트 URL (성공): " + redirectUrl.substring(0, Math.min(100, redirectUrl.length())) + "...");
             } else if (error != null) {
                 // 실패: 에러 포함
                 redirectUrl = String.format("%s?error=%s", baseUrl, URLEncoder.encode(error, StandardCharsets.UTF_8));
-                System.out.println("리다이렉트 URL (실패): " + redirectUrl);
             } else {
                 // 기본 리다이렉트
                 redirectUrl = baseUrl;
-                System.out.println("리다이렉트 URL (기본): " + redirectUrl);
             }
 
             // URI 생성 및 검증
@@ -445,9 +344,7 @@ public class OAuth2CallbackController {
         }
     }
 
-    /**
-     * 에러 응답 생성
-     */
+    // 에러 응답 생성
     private ResponseEntity<Void> createErrorResponse(String errorMessage) {
         return createRedirectResponse(frontendCallbackUrl, null, errorMessage);
     }
